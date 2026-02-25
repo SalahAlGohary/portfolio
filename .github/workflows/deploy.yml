@@ -1,0 +1,95 @@
+# ============================================
+#  CI/CD Pipeline — Deploy to GitHub Pages
+# ============================================
+name: Build & Deploy Portfolio
+
+# ─── TRIGGERS ──────────────────────────────
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+# ─── PERMISSIONS ───────────────────────────
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# ─── CONCURRENCY ───────────────────────────
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+# ─── JOBS ──────────────────────────────────
+jobs:
+
+  # ┌────────────────────────────────────────┐
+  # │  JOB 1: BUILD                          │
+  # │  Install deps, lint, test, build       │
+  # └────────────────────────────────────────┘
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js with caching
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      # Step 3: Install dependencies
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      # Step 4: Lint (optional, won't fail build)
+      - name: 🔍 Lint check
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      # Step 5: Run tests (optional, won't fail build)
+      - name: 🧪 Run tests
+        run: npm test --if-present
+        continue-on-error: true
+
+      # Step 6: Build for production
+      - name: 🏗️ Build project
+        run: npm run build
+
+      # Step 7: Configure GitHub Pages
+      - name: 📄 Setup Pages
+        uses: actions/configure-pages@v4
+
+      # Step 8: Upload build output as artifact
+      - name: 📤 Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./dist"
+
+  # ┌────────────────────────────────────────┐
+  # │  JOB 2: DEPLOY                         │
+  # │  Deploy to GitHub Pages                │
+  # └────────────────────────────────────────┘
+  deploy:
+    name: 🚀 Deploy
+    needs: build
+    runs-on: ubuntu-latest
+
+    # Only deploy on push to main (not on PRs)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
