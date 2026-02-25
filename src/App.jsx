@@ -312,7 +312,7 @@ function Portfolio({data,onNav,floatingSkills}){
           ))}
         </div>
       </section>
-      <footer style={{textAlign:"center",padding:"2rem",background:T.footerBg,color:T.footerText,fontSize:".8rem"}}>© 2025 {data.personal.name}.</footer>
+      <footer style={{textAlign:"center",padding:"2rem",background:T.footerBg,color:T.footerText,fontSize:".8rem"}}>© 2026 {data.personal.name}.</footer>
     </div>
   );
 }
